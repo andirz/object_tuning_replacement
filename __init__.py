@@ -8,21 +8,17 @@ Do not copy or use this code without the author's permission.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from objects.definition import Definition
 import objects.components.live_drag_component
+from objects.definition import Definition
 from sims4.common import Pack, is_available_pack
 
+from andirz_object_tuning_replacement import data
 from andirz_object_tuning_replacement.injector import inject_to
-from andirz_object_tuning_replacement.logger import Logger
+from andirz_object_tuning_replacement.smart_core_test import SmartCoreIntegration
 
-SCRIPT_CREATOR = 'Andirz'
-SCRIPT_NAME = 'Object Tuning Replacement Script'
-SCRIPT_VERSION = '1.0.0'
+smartcore = SmartCoreIntegration(data)
+log = smartcore.get_logger()
 
-LOG_FILE = f"{SCRIPT_CREATOR}_{SCRIPT_NAME.replace(' ', '')}.log"
-LOG_TITLE = f"{SCRIPT_CREATOR} {SCRIPT_NAME} Log v.{SCRIPT_VERSION}"
-
-log = Logger(filename=LOG_FILE, title=LOG_TITLE, force_simple_log=False, debug=False)
 
 # ========================== OBJECT DEFINITIONS =============================
 # Reminder: in range, the last number is not included, but the first one is.
@@ -115,9 +111,9 @@ REPLACEMENT_MAP = {
 }
 
 objects.components.live_drag_component.force_live_drag_enable = True
-log.debug(f"Live Drag Forced: {objects.components.live_drag_component.force_live_drag_enable}")
-log.debug(f"Tuning IDs: {TUNING_IDS}")
-log.debug(f"REPLACEMENT_MAP: {REPLACEMENT_MAP}")
+log.info(f"Live Drag Forced: {objects.components.live_drag_component.force_live_drag_enable}")
+log.info(f"Tuning IDs: {TUNING_IDS}")
+
 
 def has_livedrag_component(definition):
     LIVEDRAG_COMPONENT = 2125782609
@@ -127,7 +123,7 @@ def has_livedrag_component(definition):
         return False
     return True
 
-def add_livedrag(definition):
+def add_livedrag_component(definition):
     try:
         LIVEDRAG_COMPONENT = 2125782609
         if definition._components is None:
@@ -141,7 +137,7 @@ def add_livedrag(definition):
 
 
 @inject_to(Definition, '__init__')
-def object_tuning_replacement(original, self, properties, definition_id):
+def andirz_object_tuning_replacement(original, self, properties, definition_id):
     try:
 
         original(self, properties, definition_id)
@@ -156,16 +152,16 @@ def object_tuning_replacement(original, self, properties, definition_id):
 
         if original_tuning_id in TUNING_IDS and new_tuning_id is None:
             if not has_livedrag_component(self):
-                log.empty()
+                log.emptyline()
                 log.info(f"DEFINITION ({definition_id}) {self}:")
                 log.info(f" → Object Tuning: original={original_tuning_id}")
-                add_livedrag(self)
+                add_livedrag_component(self)
                 return
 
         if new_tuning_id not in TUNING_IDS:
             return
 
-        log.empty()
+        log.emptyline()
         log.info(f"DEFINITION ({definition_id}) {self}:")
         log.info(f" → Object Tuning: original={original_tuning_id}, new={new_tuning_id}")
         req_pack = PACK_INFO.get(new_tuning_id, Pack.BASE_GAME)
@@ -181,7 +177,7 @@ def object_tuning_replacement(original, self, properties, definition_id):
         self._tuning_file_id = new_tuning_id
         if self._tuning_file_id == new_tuning_id:
             log.info(f" → Tuning replacement applied for: {self}")
-            add_livedrag(self)
+            add_livedrag_component(self)
         else:
             log.error(f" → Tuning replacement failed for: {self}")
 
